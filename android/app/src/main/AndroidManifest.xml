@@ -37,5 +37,8 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+          android:name="com.google.firebase.ml.vision.DEPENDENCIES"
+          android:value="barcode,face,label,ocr" />
     </application>
 </manifest>
