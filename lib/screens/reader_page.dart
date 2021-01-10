@@ -18,18 +18,10 @@ class _ReaderPageState extends State<ReaderPage> {
   Detector _currentDetector = Detector.text;
   bool _isDetecting = false;
   CameraLensDirection _direction = CameraLensDirection.back;
+  VisionText _visionText;
+  String _iSee = "";
 
-  final BarcodeDetector _barcodeDetector =
-      FirebaseVision.instance.barcodeDetector();
-  final FaceDetector _faceDetector = FirebaseVision.instance.faceDetector();
-  final ImageLabeler _imageLabeler = FirebaseVision.instance.imageLabeler();
-  final ImageLabeler _cloudImageLabeler =
-      FirebaseVision.instance.cloudImageLabeler();
   final TextRecognizer _recognizer = FirebaseVision.instance.textRecognizer();
-  final TextRecognizer _cloudRecognizer =
-      FirebaseVision.instance.cloudTextRecognizer();
-  final DocumentTextRecognizer _cloudDocumentRecognizer =
-      FirebaseVision.instance.cloudDocumentTextRecognizer();
 
   @override
   void initState() {
@@ -56,7 +48,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
       ScannerUtils.detect(
         image: image,
-        detectInImage: _getDetectionMethod(),
+        detectInImage: _recognizer.processImage,
         imageRotation: description.sensorOrientation,
       ).then(
         (dynamic results) {
@@ -69,27 +61,6 @@ class _ReaderPageState extends State<ReaderPage> {
     });
   }
 
-  Future<dynamic> Function(FirebaseVisionImage image) _getDetectionMethod() {
-    switch (_currentDetector) {
-      case Detector.text:
-        return _recognizer.processImage;
-      case Detector.cloudText:
-        return _cloudRecognizer.processImage;
-      case Detector.cloudDocumentText:
-        return _cloudDocumentRecognizer.processImage;
-      case Detector.barcode:
-        return _barcodeDetector.detectInImage;
-      case Detector.label:
-        return _imageLabeler.processImage;
-      case Detector.cloudLabel:
-        return _cloudImageLabeler.processImage;
-      case Detector.face:
-        return _faceDetector.processImage;
-    }
-
-    return null;
-  }
-
   Widget _buildResults() {
     const Text noResultsText = Text('No results!');
 
@@ -99,40 +70,24 @@ class _ReaderPageState extends State<ReaderPage> {
       return noResultsText;
     }
 
-    CustomPainter painter;
+    /*    CustomPainter painter;
 
     final Size imageSize = Size(
       _camera.value.previewSize.height,
       _camera.value.previewSize.width,
-    );
-
-    switch (_currentDetector) {
-      case Detector.barcode:
-        if (_scanResults is! List<Barcode>) return noResultsText;
-        painter = BarcodeDetectorPainter(imageSize, _scanResults);
-        break;
-      case Detector.face:
-        if (_scanResults is! List<Face>) return noResultsText;
-        painter = FaceDetectorPainter(imageSize, _scanResults);
-        break;
-      case Detector.label:
-        if (_scanResults is! List<ImageLabel>) return noResultsText;
-        painter = LabelDetectorPainter(imageSize, _scanResults);
-        break;
-      case Detector.cloudLabel:
-        if (_scanResults is! List<ImageLabel>) return noResultsText;
-        painter = LabelDetectorPainter(imageSize, _scanResults);
-        break;
-      default:
-        assert(_currentDetector == Detector.text ||
-            _currentDetector == Detector.cloudText);
-        if (_scanResults is! VisionText) return noResultsText;
-        painter = TextDetectorPainter(imageSize, _scanResults);
+    ); */
+    if (_scanResults is! VisionText) {
+      return noResultsText;
+    } else {
+      _visionText = _scanResults;
+      _iSee = _visionText.text;
+      print(_iSee);
     }
-
+    /*   painter = TextDetectorPainter(imageSize, _scanResults);
     return CustomPaint(
       painter: painter,
-    );
+    ); */
+    return Text("OK");
   }
 
   Widget _buildImage() {
@@ -141,7 +96,7 @@ class _ReaderPageState extends State<ReaderPage> {
       child: _camera == null
           ? const Center(
               child: Text(
-                'Initializing Camera...',
+                'Kamera Açılıyor...',
                 style: TextStyle(
                   color: Colors.green,
                   fontSize: 30.0,
@@ -158,48 +113,17 @@ class _ReaderPageState extends State<ReaderPage> {
     );
   }
 
-  void _toggleCameraDirection() async {
-    if (_direction == CameraLensDirection.back) {
-      _direction = CameraLensDirection.front;
-    } else {
-      _direction = CameraLensDirection.back;
-    }
-
-    await _camera.stopImageStream();
-    await _camera.dispose();
-
-    setState(() {
-      _camera = null;
-    });
-
-    _initializeCamera();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ML Vision Example'),
-      ),
       body: _buildImage(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _toggleCameraDirection,
-        child: _direction == CameraLensDirection.back
-            ? const Icon(Icons.camera_front)
-            : const Icon(Icons.camera_rear),
-      ),
     );
   }
 
   @override
   void dispose() {
     _camera.dispose().then((_) {
-      _barcodeDetector.close();
-      _faceDetector.close();
-      _imageLabeler.close();
-      _cloudImageLabeler.close();
       _recognizer.close();
-      _cloudRecognizer.close();
     });
 
     _currentDetector = null;

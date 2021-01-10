@@ -11,6 +11,7 @@ class MySplash extends StatefulWidget {
 class _MySplashState extends State<MySplash> {
   FlutterTts _flutterTts = FlutterTts();
   openingCeremony() async {
+    await _flutterTts.setPitch(1);
     await _flutterTts.setLanguage("tr-TR");
     await _flutterTts.speak("Uygulama başlatılıyor");
   }
