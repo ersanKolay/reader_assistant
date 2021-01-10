@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/foundation.dart';
-import 'detector.dart';
-import 'scanner.dart';
+import '../utils/detector.dart';
+import '../utils/scanner.dart';
 
 class ReaderPage extends StatefulWidget {
   ReaderPage({Key key}) : super(key: key);
