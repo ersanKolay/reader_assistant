@@ -56,7 +56,7 @@ class _ReaderPageState extends State<ReaderPage> {
               _visionText = results;
             });
             if (_visionText.text != _tempText) {
-              tellMe(_visionText);
+              tellMe(_visionText.text);
               setState(() {
                 _tempText = _visionText.text;
               });
@@ -71,10 +71,10 @@ class _ReaderPageState extends State<ReaderPage> {
     return print("confidence degeri: " + container.confidence.toString());
   }
 
-  tellMe(VisionText visionText) async {
+  tellMe(String text) async {
     await _flutterTts.setPitch(1);
     await _flutterTts.setLanguage("tr-TR");
-    await _flutterTts.speak(visionText.text);
+    await _flutterTts.speak(text);
     await _flutterTts.awaitSpeakCompletion(true);
   }
 
@@ -113,8 +113,6 @@ class _ReaderPageState extends State<ReaderPage> {
     _camera.dispose().then((_) {
       _recognizer.close();
     });
-
-    // _currentDetector = null;
     super.dispose();
   }
 }
