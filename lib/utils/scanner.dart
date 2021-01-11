@@ -21,6 +21,7 @@ class ScannerUtils {
     @required Future<dynamic> Function(FirebaseVisionImage image) detectInImage,
     @required int imageRotation,
   }) async {
+
     return detectInImage(
       FirebaseVisionImage.fromBytes(
         _concatenatePlanes(image.planes),

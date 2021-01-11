@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/foundation.dart';
-import '../utils/detector.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../utils/scanner.dart';
 
 class ReaderPage extends StatefulWidget {
@@ -13,13 +13,12 @@ class ReaderPage extends StatefulWidget {
 }
 
 class _ReaderPageState extends State<ReaderPage> {
-  dynamic _scanResults;
   CameraController _camera;
-  Detector _currentDetector = Detector.text;
   bool _isDetecting = false;
   CameraLensDirection _direction = CameraLensDirection.back;
   VisionText _visionText;
-  String _iSee = "";
+  FlutterTts _flutterTts = FlutterTts();
+  String _tempText;
 
   final TextRecognizer _recognizer = FirebaseVision.instance.textRecognizer();
 
@@ -37,57 +36,46 @@ class _ReaderPageState extends State<ReaderPage> {
       description,
       defaultTargetPlatform == TargetPlatform.iOS
           ? ResolutionPreset.low
-          : ResolutionPreset.medium,
+          : ResolutionPreset.high,
     );
     await _camera.initialize();
 
     _camera.startImageStream((CameraImage image) {
       if (_isDetecting) return;
-
       _isDetecting = true;
-
       ScannerUtils.detect(
         image: image,
         detectInImage: _recognizer.processImage,
         imageRotation: description.sensorOrientation,
       ).then(
         (dynamic results) {
-          if (_currentDetector == null) return;
-          setState(() {
-            _scanResults = results;
-          });
+          if (results is! VisionText) {
+            return;
+          } else {
+            setState(() {
+              _visionText = results;
+            });
+            if (_visionText.text != _tempText) {
+              tellMe(_visionText);
+              setState(() {
+                _tempText = _visionText.text;
+              });
+            }
+          }
         },
       ).whenComplete(() => _isDetecting = false);
     });
   }
 
-  Widget _buildResults() {
-    const Text noResultsText = Text('No results!');
+  checkConfidence(TextContainer container) {
+    return print("confidence degeri: " + container.confidence.toString());
+  }
 
-    if (_scanResults == null ||
-        _camera == null ||
-        !_camera.value.isInitialized) {
-      return noResultsText;
-    }
-
-    /*    CustomPainter painter;
-
-    final Size imageSize = Size(
-      _camera.value.previewSize.height,
-      _camera.value.previewSize.width,
-    ); */
-    if (_scanResults is! VisionText) {
-      return noResultsText;
-    } else {
-      _visionText = _scanResults;
-      _iSee = _visionText.text;
-      print(_iSee);
-    }
-    /*   painter = TextDetectorPainter(imageSize, _scanResults);
-    return CustomPaint(
-      painter: painter,
-    ); */
-    return Text("OK");
+  tellMe(VisionText visionText) async {
+    await _flutterTts.setPitch(1);
+    await _flutterTts.setLanguage("tr-TR");
+    await _flutterTts.speak(visionText.text);
+    await _flutterTts.awaitSpeakCompletion(true);
   }
 
   Widget _buildImage() {
@@ -107,7 +95,7 @@ class _ReaderPageState extends State<ReaderPage> {
               fit: StackFit.expand,
               children: <Widget>[
                 CameraPreview(_camera),
-                _buildResults(),
+                // _buildResults(),
               ],
             ),
     );
@@ -126,7 +114,7 @@ class _ReaderPageState extends State<ReaderPage> {
       _recognizer.close();
     });
 
-    _currentDetector = null;
+    // _currentDetector = null;
     super.dispose();
   }
 }
